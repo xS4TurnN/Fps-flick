@@ -1,0 +1,692 @@
+-- =============================================
+-- 🔥 ZaZaHub v13.0
+-- - Аимбот 70px (не через стены)
+-- - ESP ников + коробками
+-- - RGB руки + оружие
+-- - Speed Hack x1.8
+-- - Bunny Hop (автопрыжок при беге)
+-- - Respawn (кнопка респавна на экране)
+-- - Конфиги сохраняются (writefile)
+-- - Меню не пропадает после катки
+-- - Красивый дизайн с тенями и прозрачностью
+-- =============================================
+
+local Player = game.Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+
+-- =============================================
+-- 💾 СОХРАНЕНИЕ КОНФИГОВ
+-- =============================================
+local CONFIG_FILE = "ZaZaHub_config.json"
+local config = {}
+
+local function loadConfig()
+    if isfile and isfile(CONFIG_FILE) then
+        local data = readfile(CONFIG_FILE)
+        config = HttpService:JSONDecode(data) or {}
+    else
+        config = {}
+    end
+    -- значения по умолчанию
+    config.aimbot = config.aimbot or false
+    config.espName = config.espName or false
+    config.espBox = config.espBox or false
+    config.rgb = config.rgb or false
+    config.speed = config.speed or false
+    config.bunnyHop = config.bunnyHop or false
+    return config
+end
+
+local function saveConfig()
+    if writefile then
+        local data = HttpService:JSONEncode(config)
+        writefile(CONFIG_FILE, data)
+    end
+end
+
+loadConfig()
+
+-- =============================================
+-- 📦 ГЛАВНОЕ МЕНЮ (улучшенный дизайн)
+-- =============================================
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ZaZaHub"
+ScreenGui.Parent = Player:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 520, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 34)
+MainFrame.BackgroundTransparency = 0.15
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 18)
+MainCorner.Parent = MainFrame
+
+-- Тень (приятный эффект)
+local Shadow = Instance.new("Frame")
+Shadow.Size = UDim2.new(1, 12, 1, 12)
+Shadow.Position = UDim2.new(0, -6, 0, -6)
+Shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.BackgroundTransparency = 0.5
+Shadow.BorderSizePixel = 0
+Shadow.Parent = MainFrame
+local ShadowCorner = Instance.new("UICorner")
+ShadowCorner.CornerRadius = UDim.new(0, 20)
+ShadowCorner.Parent = Shadow
+
+-- Заголовок
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 44)
+TitleBar.BackgroundTransparency = 1
+TitleBar.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0.5, 0, 1, 0)
+Title.Position = UDim2.new(0, 18, 0, 0)
+Title.Text = "🔥 ZaZaHub v13.0"
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(255, 215, 130)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 24
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 34, 1, -8)
+MinBtn.Position = UDim2.new(1, -76, 0, 4)
+MinBtn.Text = "–"
+MinBtn.BackgroundColor3 = Color3.fromRGB(55, 60, 85)
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 24
+MinBtn.Parent = TitleBar
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 8)
+MinCorner.Parent = MinBtn
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 34, 1, -8)
+CloseBtn.Position = UDim2.new(1, -38, 0, 4)
+CloseBtn.Text = "✕"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(55, 60, 85)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 18
+CloseBtn.Parent = TitleBar
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseBtn
+
+-- Мини-панель
+local MiniPanel = Instance.new("Frame")
+MiniPanel.Size = UDim2.new(0, 200, 0, 38)
+MiniPanel.Position = UDim2.new(0.5, -100, 0, 12)
+MiniPanel.BackgroundColor3 = Color3.fromRGB(20, 22, 34)
+MiniPanel.BackgroundTransparency = 0.2
+MiniPanel.BorderSizePixel = 0
+MiniPanel.Visible = false
+MiniPanel.Parent = ScreenGui
+local MiniCorner = Instance.new("UICorner")
+MiniCorner.CornerRadius = UDim.new(0, 14)
+MiniCorner.Parent = MiniPanel
+
+local MiniTitle = Instance.new("TextLabel")
+MiniTitle.Size = UDim2.new(0.6, 0, 1, 0)
+MiniTitle.Position = UDim2.new(0, 16, 0, 0)
+MiniTitle.Text = "🔥 ZaZaHub"
+MiniTitle.BackgroundTransparency = 1
+MiniTitle.TextColor3 = Color3.fromRGB(255, 215, 130)
+MiniTitle.Font = Enum.Font.GothamBold
+MiniTitle.TextSize = 18
+MiniTitle.TextXAlignment = Enum.TextXAlignment.Left
+MiniTitle.Parent = MiniPanel
+
+local MiniExpandBtn = Instance.new("TextButton")
+MiniExpandBtn.Size = UDim2.new(0, 30, 1, -8)
+MiniExpandBtn.Position = UDim2.new(1, -36, 0, 4)
+MiniExpandBtn.Text = "+"
+MiniExpandBtn.BackgroundColor3 = Color3.fromRGB(55, 60, 85)
+MiniExpandBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniExpandBtn.Font = Enum.Font.GothamBold
+MiniExpandBtn.TextSize = 22
+MiniExpandBtn.Parent = MiniPanel
+local MiniExpandCorner = Instance.new("UICorner")
+MiniExpandCorner.CornerRadius = UDim.new(0, 8)
+MiniExpandCorner.Parent = MiniExpandBtn
+
+-- Логика сворачивания (только ручная)
+local minimized = false
+local function minimize()
+    minimized = true
+    MainFrame.Visible = false
+    MiniPanel.Visible = true
+    MinBtn.Text = "+"
+end
+local function expand()
+    minimized = false
+    MainFrame.Visible = true
+    MiniPanel.Visible = false
+    MinBtn.Text = "–"
+end
+
+MinBtn.MouseButton1Click:Connect(function()
+    if minimized then expand() else minimize() end
+end)
+MiniExpandBtn.MouseButton1Click:Connect(function()
+    expand()
+end)
+
+-- Вкладки (горизонтальные)
+local tabs = {"Combat", "Visual", "Speed"}
+local tabButtons = {}
+local currentTab = nil
+local tabContents = {}
+
+local TabContainer = Instance.new("Frame")
+TabContainer.Size = UDim2.new(1, 0, 0, 38)
+TabContainer.Position = UDim2.new(0, 0, 0, 48)
+TabContainer.BackgroundTransparency = 1
+TabContainer.Parent = MainFrame
+
+for i, name in ipairs(tabs) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 155, 1, -8)
+    btn.Position = UDim2.new(0, (i-1)*165 + 10, 0, 4)
+    btn.Text = name
+    btn.BackgroundColor3 = Color3.fromRGB(40, 45, 72)
+    btn.TextColor3 = Color3.fromRGB(180, 190, 220)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.Parent = TabContainer
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 10)
+    btnCorner.Parent = btn
+    btn.MouseButton1Click:Connect(function()
+        if currentTab then
+            tabContents[currentTab].Visible = false
+            tabButtons[currentTab].BackgroundColor3 = Color3.fromRGB(40, 45, 72)
+            tabButtons[currentTab].TextColor3 = Color3.fromRGB(180, 190, 220)
+        end
+        currentTab = i
+        tabContents[i].Visible = true
+        btn.BackgroundColor3 = Color3.fromRGB(70, 130, 210)
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+    tabButtons[i] = btn
+
+    local wrapper = Instance.new("Frame")
+    wrapper.Size = UDim2.new(1, 0, 1, -92)
+    wrapper.Position = UDim2.new(0, 0, 0, 90)
+    wrapper.BackgroundTransparency = 1
+    wrapper.Parent = MainFrame
+
+    local content = Instance.new("ScrollingFrame")
+    content.Size = UDim2.new(1, 0, 1, 0)
+    content.BackgroundTransparency = 1
+    content.CanvasSize = UDim2.new(0, 0, 0, 400)
+    content.ScrollBarThickness = 6
+    content.Visible = false
+    content.Parent = wrapper
+    tabContents[i] = content
+end
+
+-- Создание кнопок
+local function createToggle(parent, text, yPos, configKey, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 36)
+    btn.Position = UDim2.new(0.05, 0, 0, yPos)
+    local state = config[configKey] or false
+    btn.Text = text .. (state and " (Вкл)" or " (Выкл)")
+    btn.BackgroundColor3 = state and Color3.fromRGB(60, 190, 60) or Color3.fromRGB(45, 50, 78)
+    btn.TextColor3 = Color3.fromRGB(230, 230, 245)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.Parent = parent
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 10)
+    c.Parent = btn
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = text .. (state and " (Вкл)" or " (Выкл)")
+        btn.BackgroundColor3 = state and Color3.fromRGB(60, 190, 60) or Color3.fromRGB(45, 50, 78)
+        config[configKey] = state
+        saveConfig()
+        if callback then callback(state) end
+    end)
+    -- сразу вызываем с начальным состоянием
+    if callback then callback(state) end
+    return btn
+end
+
+-- =============================================
+-- 🎯 ВКЛАДКА 1: COMBAT
+-- =============================================
+local combatTab = tabContents[1]
+
+-- Аимбот (круг 70px)
+local aimbotEnabled = config.aimbot
+local aimbotCircle = Drawing.new("Circle")
+aimbotCircle.Radius = 70
+aimbotCircle.Thickness = 2
+aimbotCircle.Color = Color3.fromRGB(0, 255, 100)
+aimbotCircle.Filled = false
+aimbotCircle.Transparency = 0.5
+aimbotCircle.Visible = false
+
+local function canSee(targetPart)
+    local origin = Camera.CFrame.Position
+    local dir = (targetPart.Position - origin).unit
+    local ray = Ray.new(origin, dir * 1000)
+    local hit, pos = workspace:FindPartOnRay(ray, Player.Character)
+    if hit then
+        return hit:IsDescendantOf(targetPart.Parent)
+    end
+    return false
+end
+
+local function getClosestInFOV()
+    local center = Camera.ViewportSize / 2
+    local target = nil
+    local minDist = math.huge
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= Player and plr.Character then
+            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+            if hrp and canSee(hrp) then
+                local pos, onScreen = Camera:WorldToScreenPoint(hrp.Position)
+                if onScreen then
+                    local dist = (Vector2.new(pos.X, pos.Y) - center).magnitude
+                    if dist < 70 and dist < minDist then
+                        minDist = dist
+                        target = plr
+                    end
+                end
+            end
+        end
+    end
+    return target
+end
+
+local aimbotToggle = createToggle(combatTab, "🎯 Аимбот (70px)", 10, "aimbot", function(s)
+    aimbotEnabled = s
+    if not s then aimbotCircle.Visible = false end
+end)
+
+-- Respawn (кнопка респавна с плавающей кнопкой)
+local respawnButtonOnScreen = nil
+
+local function respawn()
+    if Player.Character then
+        Player.Character:BreakJoints()
+    end
+end
+
+local function createFloatingRespawnButton()
+    if respawnButtonOnScreen then return end
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "RespawnButtonGUI"
+    gui.Parent = Player:WaitForChild("PlayerGui")
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 100, 0, 40)
+    btn.Position = UDim2.new(0.85, 0, 0.85, 0)
+    btn.Text = "🔄 Respawn"
+    btn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.BorderSizePixel = 0
+    btn.Parent = gui
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 10)
+    c.Parent = btn
+    btn.MouseButton1Click:Connect(function()
+        respawn()
+    end)
+    -- кнопка закрытия (маленькая)
+    local close = Instance.new("TextButton")
+    close.Size = UDim2.new(0, 20, 0, 20)
+    close.Position = UDim2.new(1, -22, 0, 0)
+    close.Text = "✕"
+    close.BackgroundTransparency = 1
+    close.TextColor3 = Color3.fromRGB(255, 255, 255)
+    close.Font = Enum.Font.GothamBold
+    close.TextSize = 14
+    close.Parent = btn
+    close.MouseButton1Click:Connect(function()
+        gui:Destroy()
+        respawnButtonOnScreen = nil
+    end)
+    respawnButtonOnScreen = gui
+end
+
+local respawnBtn = Instance.new("TextButton")
+respawnBtn.Size = UDim2.new(0.9, 0, 0, 36)
+respawnBtn.Position = UDim2.new(0.05, 0, 0, 60)
+respawnBtn.Text = "💀 Респавн (создать кнопку)"
+respawnBtn.BackgroundColor3 = Color3.fromRGB(45, 50, 78)
+respawnBtn.TextColor3 = Color3.fromRGB(230, 230, 245)
+respawnBtn.Font = Enum.Font.GothamBold
+respawnBtn.TextSize = 14
+respawnBtn.Parent = combatTab
+local c = Instance.new("UICorner")
+c.CornerRadius = UDim.new(0, 10)
+c.Parent = respawnBtn
+respawnBtn.MouseButton1Click:Connect(function()
+    respawn()
+    createFloatingRespawnButton()
+end)
+
+-- =============================================
+-- 👁️ ВКЛАДКА 2: VISUAL
+-- =============================================
+local visualTab = tabContents[2]
+
+-- ESP ников
+local espNameEnabled = config.espName
+local espNameObjects = {}
+local espNameConnections = {}
+
+local function createNameESP(player)
+    if player == Player then return end
+    if espNameObjects[player] then return end
+    local text = Drawing.new("Text")
+    text.Text = player.Name
+    text.Size = 18
+    text.Color = Color3.fromRGB(255, 255, 255)
+    text.Outline = true
+    text.OutlineColor = Color3.fromRGB(0, 0, 0)
+    text.Center = true
+    text.Transparency = 0.8
+    text.Visible = false
+    espNameObjects[player] = text
+    local conn = RunService.RenderStepped:Connect(function()
+        if not espNameEnabled then
+            text.Visible = false
+            return
+        end
+        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local pos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+            if onScreen then
+                text.Position = Vector2.new(pos.X, pos.Y - 50)
+                text.Visible = true
+            else
+                text.Visible = false
+            end
+        else
+            text.Visible = false
+        end
+    end)
+    table.insert(espNameConnections, conn)
+end
+
+local function clearNameESP()
+    for _, obj in pairs(espNameObjects) do obj:Remove() end
+    espNameObjects = {}
+    for _, conn in pairs(espNameConnections) do conn:Disconnect() end
+    espNameConnections = {}
+end
+
+createToggle(visualTab, "👤 ESP ников", 10, "espName", function(s)
+    espNameEnabled = s
+    if s then
+        for _, plr in pairs(Players:GetPlayers()) do createNameESP(plr) end
+        local conn = Players.PlayerAdded:Connect(function(plr)
+            if espNameEnabled then createNameESP(plr) end
+        end)
+        table.insert(espNameConnections, conn)
+    else
+        clearNameESP()
+    end
+end)
+
+-- ESP коробками
+local espBoxEnabled = config.espBox
+local espBoxObjects = {}
+local espBoxConnections = {}
+
+local function createBoxESP(player)
+    if player == Player then return end
+    if espBoxObjects[player] then return end
+    local box = Drawing.new("Square")
+    box.Size = Vector2.new(50, 70)
+    box.Thickness = 2
+    box.Color = Color3.fromRGB(0, 200, 255)
+    box.Filled = false
+    box.Transparency = 0.6
+    box.Visible = false
+    local line = Drawing.new("Line")
+    line.Thickness = 1.5
+    line.Color = Color3.fromRGB(0, 200, 255)
+    line.Transparency = 0.5
+    line.Visible = false
+    espBoxObjects[player] = {box = box, line = line}
+    local conn = RunService.RenderStepped:Connect(function()
+        if not espBoxEnabled then
+            box.Visible = false
+            line.Visible = false
+            return
+        end
+        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local pos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+            if onScreen then
+                box.Position = Vector2.new(pos.X - 25, pos.Y - 35)
+                box.Visible = true
+                local bottom = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+                line.From = bottom
+                line.To = Vector2.new(pos.X, pos.Y)
+                line.Visible = true
+            else
+                box.Visible = false
+                line.Visible = false
+            end
+        else
+            box.Visible = false
+            line.Visible = false
+        end
+    end)
+    table.insert(espBoxConnections, conn)
+end
+
+local function clearBoxESP()
+    for _, data in pairs(espBoxObjects) do
+        data.box:Remove()
+        data.line:Remove()
+    end
+    espBoxObjects = {}
+    for _, conn in pairs(espBoxConnections) do conn:Disconnect() end
+    espBoxConnections = {}
+end
+
+createToggle(visualTab, "📦 ESP коробками", 60, "espBox", function(s)
+    espBoxEnabled = s
+    if s then
+        for _, plr in pairs(Players:GetPlayers()) do createBoxESP(plr) end
+        local conn = Players.PlayerAdded:Connect(function(plr)
+            if espBoxEnabled then createBoxESP(plr) end
+        end)
+        table.insert(espBoxConnections, conn)
+    else
+        clearBoxESP()
+    end
+end)
+
+-- RGB подсветка
+local rgbEnabled = config.rgb
+local rgbSpeed = 1.2
+local function updateRGB()
+    if not rgbEnabled or not Player.Character then return end
+    local hue = (tick() * rgbSpeed) % 1
+    local color = Color3.fromHSV(hue, 1, 1)
+    for _, part in pairs(Player.Character:GetChildren()) do
+        if part:IsA("BasePart") and (part.Name == "Right Arm" or part.Name == "Left Arm" or part.Name == "Torso") then
+            part.Color = color
+        end
+    end
+    local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+    if tool then
+        for _, part in pairs(tool:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Color = Color3.fromHSV((hue + 0.3) % 1, 1, 1)
+            end
+        end
+    end
+end
+
+createToggle(visualTab, "🌈 RGB (руки+оружие)", 110, "rgb", function(s)
+    rgbEnabled = s
+    if not s then
+        if Player.Character then
+            for _, part in pairs(Player.Character:GetChildren()) do
+                if part:IsA("BasePart") then part.Color = Color3.fromRGB(255,255,255) end
+            end
+            local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+            if tool then
+                for _, part in pairs(tool:GetChildren()) do
+                    if part:IsA("BasePart") then part.Color = Color3.fromRGB(255,255,255) end
+                end
+            end
+        end
+    end
+end)
+
+-- =============================================
+-- ⚡ ВКЛАДКА 3: SPEED (Speed Hack + Bunny Hop)
+-- =============================================
+local speedTab = tabContents[3]
+
+local speedEnabled = config.speed
+local speedMultiplier = 1.8
+local humanoid = nil
+
+local function updateSpeed()
+    if not Player.Character then return end
+    if not humanoid or humanoid.Parent ~= Player.Character then
+        humanoid = Player.Character:FindFirstChild("Humanoid")
+    end
+    if humanoid then
+        if speedEnabled then
+            humanoid.WalkSpeed = 16 * speedMultiplier
+        else
+            humanoid.WalkSpeed = 16
+        end
+    end
+end
+
+createToggle(speedTab, "⚡ Speed Hack (x" .. speedMultiplier .. ")", 10, "speed", function(s)
+    speedEnabled = s
+    if Player.Character and humanoid then
+        if speedEnabled then
+            humanoid.WalkSpeed = 16 * speedMultiplier
+        else
+            humanoid.WalkSpeed = 16
+        end
+    end
+end)
+
+-- Bunny Hop (автопрыжок при беге)
+local bunnyHopEnabled = config.bunnyHop
+local bhopConnection = nil
+local function toggleBunnyHop(s)
+    bunnyHopEnabled = s
+    if s then
+        if bhopConnection then bhopConnection:Disconnect() end
+        bhopConnection = RunService.RenderStepped:Connect(function()
+            if not bunnyHopEnabled then return end
+            if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+                local human = Player.Character.Humanoid
+                if human.MoveDirection.Magnitude > 0.5 then
+                    -- если бежит, прыгаем
+                    human.Jump = true
+                end
+            end
+        end)
+    else
+        if bhopConnection then
+            bhopConnection:Disconnect()
+            bhopConnection = nil
+        end
+    end
+end
+
+createToggle(speedTab, "🐰 Bunny Hop (автопрыжок)", 60, "bunnyHop", function(s)
+    toggleBunnyHop(s)
+end)
+
+-- =============================================
+-- 🔄 ОБНОВЛЕНИЯ
+-- =============================================
+
+RunService.RenderStepped:Connect(function()
+    -- Аимбот
+    if aimbotEnabled then
+        local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+        aimbotCircle.Position = center
+        aimbotCircle.Visible = true
+        local target = getClosestInFOV()
+        if target then
+            aimbotCircle.Color = Color3.fromRGB(255, 50, 50)
+            local targetPos = target.Character.HumanoidRootPart.Position
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+        else
+            aimbotCircle.Color = Color3.fromRGB(0, 255, 100)
+        end
+    else
+        aimbotCircle.Visible = false
+    end
+
+    -- RGB
+    if rgbEnabled then updateRGB() end
+end)
+
+-- Сброс скорости и обновление при смене персонажа
+Player.CharacterAdded:Connect(function()
+    humanoid = nil
+    if speedEnabled then
+        wait(0.3)
+        updateSpeed()
+    end
+    -- пересоздаём ESP для новых игроков
+    if espNameEnabled then
+        clearNameESP()
+        for _, plr in pairs(Players:GetPlayers()) do createNameESP(plr) end
+    end
+    if espBoxEnabled then
+        clearBoxESP()
+        for _, plr in pairs(Players:GetPlayers()) do createBoxESP(plr) end
+    end
+    -- если есть плавающая кнопка респавна, удаляем её (она была привязана к персонажу)
+    if respawnButtonOnScreen then
+        respawnButtonOnScreen:Destroy()
+        respawnButtonOnScreen = nil
+    end
+end)
+
+-- =============================================
+-- 🧹 ОЧИСТКА ПРИ ЗАКРЫТИИ
+-- =============================================
+CloseBtn.MouseButton1Click:Connect(function()
+    clearNameESP()
+    clearBoxESP()
+    aimbotCircle:Remove()
+    if speedEnabled and humanoid then humanoid.WalkSpeed = 16 end
+    if bhopConnection then bhopConnection:Disconnect() end
+    if respawnButtonOnScreen then
+        respawnButtonOnScreen:Destroy()
+        respawnButtonOnScreen = nil
+    end
+    ScreenGui:Destroy()
+end)
+
+-- =============================================
+-- 🚀 ЗАПУСК
+-- =============================================
+tabButtons[1].MouseButton1Click:Fire()
+print("🔥 ZaZaHub v13.0 загружен! Конфиги сохранены.")
